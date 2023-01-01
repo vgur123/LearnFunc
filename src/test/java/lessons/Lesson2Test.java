@@ -20,5 +20,8 @@ public class Lesson2Test {
                 = taxRate -> price -> price + price * taxRate;
         System.out.println(addTax.apply(tax).apply(120.00));
 
+        // Partially applying
+        Function<Double, Double> tc9 = addTax.apply(0.09);
+        double price = tc9.apply(12.0);
     }
 }
