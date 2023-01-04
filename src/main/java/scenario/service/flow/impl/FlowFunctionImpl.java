@@ -4,6 +4,7 @@ package scenario.service.flow.impl;
 
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Mono;
+import scenario.MDCUtils;
 import scenario.context.FlowContext;
 import scenario.service.flow.FlowFunction;
 import scenario.service.flow.sub.SubFlowFunction;
@@ -52,6 +53,7 @@ public abstract class FlowFunctionImpl  <RQ, RS, CTX extends FlowContext<RQ, RS>
     }
 
     private Mono<? extends CTX> onErrorResume(CTX ctx, Throwable throwable) {
+        return null;
     }
 
     protected RS onFinish(CTX ctx) {
