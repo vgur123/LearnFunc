@@ -1,9 +1,11 @@
 package scenario.logger;
 
-import java.util.function.Consumer;
+import lombok.Getter;
+import lombok.Setter;
 
 public class ExtServiceContextMetricImpl<RQ,RS> {
-    public static Consumer<ExterviceContext<RQ,RS>> getInstanceDefaul() {
-        return null;
-    }
+    @Getter
+    @Setter
+    static ExtServiceContextMetricImpl instanceDefault = new ExtServiceContextMetricImpl();
+
 }

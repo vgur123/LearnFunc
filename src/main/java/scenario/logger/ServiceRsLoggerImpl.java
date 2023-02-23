@@ -1,8 +1,8 @@
 package scenario.logger;
 
-import java.util.function.Consumer;
+import lombok.Getter;
 
 public class ServiceRsLoggerImpl<RQ,RS> {
-    public static Consumer<ExterviceContext<RQ,RS>> getInstanceDefaul() {
-    }
+    @Getter
+    public static ServiceRsLoggerImpl instanceDefault = new ServiceRsLoggerImpl();
 }

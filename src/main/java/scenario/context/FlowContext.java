@@ -7,8 +7,10 @@ import java.util.Map;
 @Data
 public class FlowContext <RQ, RS>{
     private final long start = System.currentTimeMillis();
+    private long startTime;
     private long time;
-    private RQ request;
-    private RS response;
+    private RQ rq;
+    private RS rs;
     private Map<String, String> mapMdc;
+    String ServiceName;
 }

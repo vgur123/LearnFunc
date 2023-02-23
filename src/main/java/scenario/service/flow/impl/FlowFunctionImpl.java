@@ -3,15 +3,20 @@ package scenario.service.flow.impl;
 
 
 import lombok.extern.slf4j.Slf4j;
-import org.json.JSONWriter;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import reactor.core.publisher.Mono;
-import scenario.MDCUtils;
+import scenario.MDCUtil;
 import scenario.context.FlowContext;
+import scenario.exceptions.RequestCanceledExceptin;
+import scenario.logger.FlowRqLoggerImpl;
+import scenario.logger.FlowRsLoggerImpl;
 import scenario.service.flow.FlowFunction;
 import scenario.service.flow.sub.SubFlowFunction;
+import utils.GenericUtils;
+import utils.ServiceNameFunction;
 
+import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -19,17 +24,20 @@ import java.util.function.Supplier;
 
 @Slf4j
 public abstract class FlowFunctionImpl  <RQ, RS, CTX extends FlowContext<RQ, RS>> implements FlowFunction <RQ, RS>{
-    protected Logger loggerCtx =  LoggerFactory.getLogger(getClass());
+    protected Logger loggerCtx = org.slf4j.LoggerFactory.getLogger((getClass()));
     protected Supplier<RS> rsConstructor = new ClassConstructorSupplier<>(GenericUtils.resolveTypeArgument(getClass(), FlowFunctionImpl.class, 1));
-    protected Supplier<RS> ctxConstructor = new ClassConstructorSupplier<>(GenericUtils.resolveTypeArgument(getClass(), FlowFunctionImpl.class, 2));
+    protected Supplier<CTX> ctxConstructor = new ClassConstructorSupplier<>(GenericUtils.resolveTypeArgument(getClass(), FlowFunctionImpl.class, 2));
     protected Consumer<CTX> fillContextDefault = this::fillContextDefault;
     protected Function<RQ, CTX> createContext = this::createContext;
+    protected Function<RQ, Map<String, String>> mdcContext = this::mdcContext;
+
     protected Consumer<CTX> rqLogger = FlowRqLoggerImpl.getInstanceDefauly();
     protected Consumer<CTX> rsLogger = FlowRsLoggerImpl.getInstanceDefauly();
     protected SubFlowFunction<CTX> subFlow = SubFlowFunction.empty();
     protected BiConsumer<CTX, Throwable> applyError = this::applyError;
-    protected JsonWriter<Object> jsonWriter = new JSONWriter();
-
+    protected JsonWriter<Object> jsonWriter = new JsonWriter<>();
+    protected Consumer<CTX> metric = FlowContextMetricImpl.getInstanceDefaul();
+    protected String serviceName = ServiceNameFunction.getInstanceDefault().apply(getClass());
 
 
     protected void rqLogger(CTX ctx) {
@@ -48,7 +56,7 @@ public abstract class FlowFunctionImpl  <RQ, RS, CTX extends FlowContext<RQ, RS>
                 .doOnCancel(()->onCancel(ctx))
                 .onErrorResume(throwable -> onErrorResume(ctx, throwable))
                 .map(this::onFinish)
-                .contextWrite(context -> MDCUtils.contextWriteMdc(context, ctx.getMapMdc()));
+                .contextWrite(context -> MDCUtil.contextWriteMdc(context, ctx.getMapMdc()));
     }
 
 
@@ -59,10 +67,37 @@ public abstract class FlowFunctionImpl  <RQ, RS, CTX extends FlowContext<RQ, RS>
     }
 
     private CTX createContext(RQ rq) {
+        Map<String, String> mdc = mdcContext.apply(rq);
+        MDCUtil.setContextMap(mdc);
+        CTX ctx = ctxConstructor.get();
+        ctx.setRq(rq);
+        ctx.setRs(rsConstructor.get());
+        ctx.setMapMdc(MDC.getCopyOfContextMap());
+        ctx.setServiceName(serviceName.get());
+        ctx.setLogger(loggerCtx);
+        fillContextDefault.accept(ctx);
+        return ctx;
+    }
+
+    protected Map<String, String> mdcContext(RQ rq) {
         return null;
     }
 
-    private void onCancel(CTX ctx) {
+    protected void fillContextDefault(CTX ctx) {
+    }
+
+    protected void onCancel(CTX ctx) {
+        MDC.setContextMap(ctx.getMapMdc());
+        ctx.setTime(System.currentTimeMillis()-ctx.getStartTime());
+        applyError.accept(ctx, RequestCanceledExceptin.instance);
+        rsLogger.accept(ctx);
+        metric.accept(ctx);
+    }
+
+    protected void validate(CTX ctx) {
+    }
+
+    protected void metric(CTX ctx) {
     }
 
     private Mono<? extends CTX> onErrorResume(CTX ctx, Throwable throwable) {
@@ -70,12 +105,10 @@ public abstract class FlowFunctionImpl  <RQ, RS, CTX extends FlowContext<RQ, RS>
     }
 
     protected RS onFinish(CTX ctx) {
-        ctx.setTime(System.currentTimeMillis()-ctx.getStart());
+        ctx.setTime(System.currentTimeMillis()-ctx.getStartTime());
         rsLogger.accept(ctx);
-        return ctx.getResponse();
-    }
-
-    private void fillContextDefault(CTX ctx) {
+        metric.accept(ctx);
+        return ctx.getRs();
     }
 
     private void applyError(CTX ctx, Throwable throwable) {
