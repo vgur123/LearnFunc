@@ -6,7 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.MDC;
 import reactor.core.publisher.Mono;
-import scenario.MDCUtil;
+import utils.MDCUtil;
 import scenario.context.FlowContext;
 import scenario.exceptions.RequestCanceledExceptin;
 import scenario.logger.FlowRqLoggerImpl;
@@ -39,14 +39,7 @@ public abstract class FlowFunctionImpl  <RQ, RS, CTX extends FlowContext<RQ, RS>
     protected Consumer<CTX> metric = FlowContextMetricImpl.getInstanceDefaul();
     protected String serviceName = ServiceNameFunction.getInstanceDefault().apply(getClass());
 
-
-    protected void rqLogger(CTX ctx) {
-        log.info("Request is {}", ctx.getRequest() );
-    }
-
-    protected void rsLogger(CTX ctx) {
-        log.info("Response is {}", ctx.getResponse() );
-    }
+    public static final String METRIC_TIMER = "flow.income";
 
     @Override
     public Mono<RS> apply(RQ rq){
@@ -58,7 +51,6 @@ public abstract class FlowFunctionImpl  <RQ, RS, CTX extends FlowContext<RQ, RS>
                 .map(this::onFinish)
                 .contextWrite(context -> MDCUtil.contextWriteMdc(context, ctx.getMapMdc()));
     }
-
 
     private CTX start(RQ rq) {
         CTX ctx = createContext.apply(rq);
@@ -100,10 +92,6 @@ public abstract class FlowFunctionImpl  <RQ, RS, CTX extends FlowContext<RQ, RS>
     protected void metric(CTX ctx) {
     }
 
-    private Mono<? extends CTX> onErrorResume(CTX ctx, Throwable throwable) {
-        return null;
-    }
-
     protected RS onFinish(CTX ctx) {
         ctx.setTime(System.currentTimeMillis()-ctx.getStartTime());
         rsLogger.accept(ctx);
@@ -114,6 +102,25 @@ public abstract class FlowFunctionImpl  <RQ, RS, CTX extends FlowContext<RQ, RS>
     private void applyError(CTX ctx, Throwable throwable) {
     }
 
-    private class JsonWriter<T> {
+
+    protected Mono<CTX> onErrorResume (CTX ctx, Throwable throwable){
+        applyError.accept(ctx, throwable);
+        return Mono.just(ctx);
+    }
+
+    protected void subFlowNext(SubFlowFunction<CTX> ctx){
+        subFlow = subFlow.next(ctx);
+    }
+
+    protected void subFlowNext(Consumer<CTX> ctx){
+        subFlow = subFlow.nextConsumer(ctx);
+    }
+
+    protected void rqLogger(CTX ctx){
+        log.info("Request {}", jsonWriter.writeSave(ctx.getRq()));
+    }
+
+    protected void rsLogger(CTX ctx){
+        log.info("Response time {} body {} ", ctx.getTime(), jsonWriter.writeSave(ctx.getRs()));
     }
 }
