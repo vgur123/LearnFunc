@@ -1,6 +1,7 @@
 package scenario.context;
 
 import lombok.Data;
+import org.slf4j.Logger;
 
 import java.util.Map;
 
@@ -13,4 +14,5 @@ public class FlowContext <RQ, RS>{
     private RS rs;
     private Map<String, String> mapMdc;
     String ServiceName;
+    Logger logger;
 }

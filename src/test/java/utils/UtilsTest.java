@@ -11,7 +11,7 @@ public class UtilsTest {
 
 class Foo<T> {
     public Class<T> getEntityClazz() {
-        return GenericUtils.resolveTypeArgument(this.getClass(), Foo.class, 1);
+        return GenericUtils.resolveTypeArgument(this.getClass(), Foo.class, 0);
     }
 }
 
