@@ -1,17 +1,18 @@
 package scenario.context;
 
 import lombok.Data;
-import scenario.logger.Logger;
+import org.slf4j.Logger;
 
 import java.util.Map;
 
 @Data
-public class FlowContext<RQ, RS> implements Context<RQ,RS>{
+public class FlowContext <RQ, RS>{
     private final long start = System.currentTimeMillis();
-    private Logger logger;
+    private long startTime;
     private long time;
-    private RQ request;
-    private RS response;
+    private RQ rq;
+    private RS rs;
     private Map<String, String> mapMdc;
-    private String serviceName;
+    String ServiceName;
+    Logger logger;
 }
