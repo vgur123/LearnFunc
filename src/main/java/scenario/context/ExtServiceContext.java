@@ -2,7 +2,7 @@ package scenario.context;
 
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
-import scenario.logger.Logger;
+import org.slf4j.Logger;
 
 import java.util.Map;
 
