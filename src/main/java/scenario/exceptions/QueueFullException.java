@@ -1,6 +1,13 @@
 package scenario.exceptions;
 
+import lombok.Getter;
+
 public class QueueFullException extends Throwable {
-    public QueueFullException(Object o, String nameThread) {
+    @Getter
+    private String nameThread;
+
+    public QueueFullException(Throwable cause, String nameThread) {
+        super(cause);
+        this.nameThread=nameThread;
     }
 }

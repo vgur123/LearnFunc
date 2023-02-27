@@ -1,6 +1,6 @@
 package scenario.context;
 
-import scenario.logger.Logger;
+import org.slf4j.Logger;
 
 import java.util.Map;
 

@@ -6,7 +6,7 @@ import org.slf4j.Logger;
 import java.util.Map;
 
 @Data
-public class FlowContext <RQ, RS>{
+public class FlowContext <RQ, RS> implements Context<RQ, RS> {
     private final long start = System.currentTimeMillis();
     private long startTime;
     private long time;
