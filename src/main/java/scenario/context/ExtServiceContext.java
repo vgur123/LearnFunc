@@ -8,7 +8,7 @@ import java.util.Map;
 
 @Data
 @RequiredArgsConstructor
-public class ExtServiceContext<RQ, RS> implements Context<RQ, RS> {
+public class ExtServiceContext<RQ, RS> implements Context<RQ,RS> {
     private final long startTime = System.currentTimeMillis();
     private Logger logger;
     private RQ rq;
